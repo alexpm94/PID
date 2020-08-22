@@ -2,34 +2,36 @@
 Self-Driving Car Engineer Nanodegree Program
 
 # Reflection
-## Notes about everything I tried.
-First, I would like to point the importance of having the correct motion model of the vehicle. If we would have it, it would be enough to run the twiddle algorithm in a python script, just as Sebastian did. 
-We can notice that the model of the vehicle is way different, because it doesn't behave the same in the graphic Simulator. The first thing I thougt to do, was try to find the motion model of the vehicle from the simulator, so that I could find the best gains Kp, Kd, Ki with the less processing.
-My initial idea was to find the transfer function, by measuring the maximum overshoot. However, I did not find the way to set the vehicle at pre-defined coordinates, then record the cross track error and obtain the transfer function of the system. ![image1]("../images/mp.png")
-
-
-Then I thought to implement a fuzzy control. The idea of the fuzzy control is to map the error to the control unit input. In this case is not necesary to know the exact motion model. 
-It's enough to know the contrsaints of the system. In this case the maximum speed and the maximum steering angle. As well as to know how much important is the error. For example, to keep the car in the centre of the lane, we know that to be in the range of 10-15 cm is ok, we could consider this offset as "correct". As the error increments, we should penalize it differently. In other words, if the CTE (Cross Track Error) is less than 15cm, we would like to make little changes in the steering, but as it the CTE increses, we should put a different weight according to it. I tried the following fuzzy controler for the steering. I code it using if statements. It should be smooth following Sugeno's methodologie. ![image2]("../images/sugeno.png")
-
-I got the following response for the system.
- ![image2]("../images/fuzzy.png")
-
-Then I just tried to manually tweak the parameters. I arrived to a better result.
-![image2]("../images/manually.png")
-
-I also traied with a different trajectory and it performed awesome!
-![image2]("../images/eights.png")
-
-I decided to prove different gains by do it directly on the simulator. However I used two controlers. One for 
 
 ## Describe the effect each of the P, I, D components had in your implementation.
+
 In this project I used two PID controllers controlers. One for steering and one for throttle. The car drives successfully around the track. The speed was set to 40mph.
 
-The PID controller was implemented in PID.cpp. The method Init initializes the PID with the parameters passed as argument, while the method UpdateError keeps track of the proportional, differential and integral errors of the PID controller (more on that later). Finally the method TotalError() returns the control input as a result (combining P, I and D corrections).
+The most important parameter out of the three was the Derivative. The Proportional gain tend to cause high osciliations but it reaches the desired trajectory "quickly". In my case I noticed that the "I" component has not a high impact. Maybe the car from simulator doesn't consist in an Ackerman one. Sebastian explained the systematic bias. I understood that Ackerman motion models tend to have this bias, as the wheels are not alined. 
 
-The main program main.cpp handles the communication via uWebSockets to the simulator. From lines 35 to 44 two instances of the PID class (one for steering and one for throttle/braking) are created and initialized with the chosen parameters. From lines 64 to 70 both PID controllers are fed every time there is new information coming from the simulator. We pass the Cross Track Error to the PID controlling the steering, which is used to update/compute de PID error and return the steering value. The same is done with the PID controlling the throttle, but in this case we give the difference of the current speed of the car and the reference speed (which is set to 40mph in our case).
+The main program main.cpp handles the communication via uWebSockets to the simulator. Two instances of the PID class (one for steering and one for throttle/braking) are created and initialized with the chosen parameters. Both PID controllers are fed every time there is new information coming from the simulator. I passed the CTE to the PID controlling the steering, which is used to update/compute de PID error and return the steering value. The same is done with the PID controlling the throttle, but in this case we give the difference of the current speed of the car and the reference speed (which is set to 40mph in our case).
 
-## Describe how the final hyperparameters were chosen.
+## Describe how the final hyperparameters were chosen
+
+Firstly, I would like to point the importance of having the correct motion model of the vehicle. If we would have it, it would be enough to run the twiddle algorithm in a python script, just as Sebastian did. 
+We can notice that the model of the vehicle is way different, because it doesn't behave the same in the graphic Simulator. The first thought I had, was to try to find the motion model of the vehicle from the simulator, so that I could find the best gains Kp, Kd, Ki with the less processing.
+My initial idea was to find the transfer function, by measuring the maximum overshoot. However, I did not find the way to set the vehicle at pre-defined coordinates, then record the cross track error and obtain the transfer function of the system.
+![image1](images/mp.png)
+
+Then I thought to implement a fuzzy control. The idea of the fuzzy control is to map the error to the control unit input. In this case is not necesary to know the exact motion model. 
+It's enough to know the contrsaints of the system. In this case the maximum speed and the maximum steering angle. As well as to know how much important is the error. For example, to keep the car in the centre of the lane, we know that to be in the range of 10-15 cm is ok, we could consider this offset as "correct". As the error increments, we should penalize it differently. In other words, if the CTE (Cross Track Error) is less than 15cm, we would like to make little changes in the steering, but as it the CTE increses, we should put a different weight according to it. I tried the following fuzzy controler for the steering. I coded it using if statements. It should be smooth following Sugeno's methodologie.
+![image2](images/sugeno.png)
+
+I got the following response for the system.
+ ![image3](images/fuzzy.png)
+
+Then I just tried to manually tweak the parameters. I arrived to a better result.
+![image4](images/manually.png)
+
+I also traied with a different trajectory and it performed awesome!
+![image5](images/eights.png)
+
+I decided to prove different gains by do it directly on the simulator. However I used two controlers. One for steering and one for throttle.
 
 The parameters were chosen manually and iteratively after trial and error driving autonomously around the track. I started with the recommended parameters presented along Sebastian Thrun's PID class, which worked fairly well, and then improved upon that.
 
@@ -37,7 +39,9 @@ My final parameters for steering were Kp=0.2, Kd=3.5 and Ki=0.0001. My impressio
 
 For handling the throttle I finally chose Kp=0.2, Kd=0.5 and Ki=0.0001. 
 
-It is possible to improve the driving behaviour by further tuning the parameters (either manually or optimizing with for example the Twiddle algorighm). In the future I'll try to improve my fuzzy logic approach. And even try other type of algorithms such as MPC. 
+It is possible to improve the driving behaviour by further tuning the parameters (either manually or optimizing with for example the Twiddle algorighm). In the future I'll try to improve my fuzzy logic approach. And even try other type of algorithms such as MPC.
+
+In addition, I will try to get the transer function of the car. So that, the obtention of the K gains would be easier to get, no matter the structure of the vehicle.
 
 ---
 
