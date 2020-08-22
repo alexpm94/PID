@@ -31,7 +31,7 @@ Then I just tried to manually tweak the parameters. I arrived to a better result
 I also traied with a different trajectory and it performed awesome!
 ![image5](images/eights.png)
 
-I decided to prove different gains by do it directly on the simulator. However I used two controlers. One for 
+I decided to prove different gains by do it directly on the simulator. However I used two controlers. One for steering and one for throttle.
 
 The parameters were chosen manually and iteratively after trial and error driving autonomously around the track. I started with the recommended parameters presented along Sebastian Thrun's PID class, which worked fairly well, and then improved upon that.
 
