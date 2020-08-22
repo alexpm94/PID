@@ -1,6 +1,44 @@
 # CarND-Controls-PID
 Self-Driving Car Engineer Nanodegree Program
 
+# Reflection
+## Notes about everything I tried.
+First, I would like to point the importance of having the correct motion model of the vehicle. If we would have it, it would be enough to run the twiddle algorithm in a python script, just as Sebastian did. 
+We can notice that the model of the vehicle is way different, because it doesn't behave the same in the graphic Simulator. The first thing I thougt to do, was try to find the motion model of the vehicle from the simulator, so that I could find the best gains Kp, Kd, Ki with the less processing.
+My initial idea was to find the transfer function, by measuring the maximum overshoot. However, I did not find the way to set the vehicle at pre-defined coordinates, then record the cross track error and obtain the transfer function of the system. ![image1]("../images/mp.png")
+
+
+Then I thought to implement a fuzzy control. The idea of the fuzzy control is to map the error to the control unit input. In this case is not necesary to know the exact motion model. 
+It's enough to know the contrsaints of the system. In this case the maximum speed and the maximum steering angle. As well as to know how much important is the error. For example, to keep the car in the centre of the lane, we know that to be in the range of 10-15 cm is ok, we could consider this offset as "correct". As the error increments, we should penalize it differently. In other words, if the CTE (Cross Track Error) is less than 15cm, we would like to make little changes in the steering, but as it the CTE increses, we should put a different weight according to it. I tried the following fuzzy controler for the steering. I code it using if statements. It should be smooth following Sugeno's methodologie. ![image2]("../images/sugeno.png")
+
+I got the following response for the system.
+ ![image2]("../images/fuzzy.png")
+
+Then I just tried to manually tweak the parameters. I arrived to a better result.
+![image2]("../images/manually.png")
+
+I also traied with a different trajectory and it performed awesome!
+![image2]("../images/eights.png")
+
+I decided to prove different gains by do it directly on the simulator. However I used two controlers. One for 
+
+## Describe the effect each of the P, I, D components had in your implementation.
+In this project I used two PID controllers controlers. One for steering and one for throttle. The car drives successfully around the track. The speed was set to 40mph.
+
+The PID controller was implemented in PID.cpp. The method Init initializes the PID with the parameters passed as argument, while the method UpdateError keeps track of the proportional, differential and integral errors of the PID controller (more on that later). Finally the method TotalError() returns the control input as a result (combining P, I and D corrections).
+
+The main program main.cpp handles the communication via uWebSockets to the simulator. From lines 35 to 44 two instances of the PID class (one for steering and one for throttle/braking) are created and initialized with the chosen parameters. From lines 64 to 70 both PID controllers are fed every time there is new information coming from the simulator. We pass the Cross Track Error to the PID controlling the steering, which is used to update/compute de PID error and return the steering value. The same is done with the PID controlling the throttle, but in this case we give the difference of the current speed of the car and the reference speed (which is set to 40mph in our case).
+
+## Describe how the final hyperparameters were chosen.
+
+The parameters were chosen manually and iteratively after trial and error driving autonomously around the track. I started with the recommended parameters presented along Sebastian Thrun's PID class, which worked fairly well, and then improved upon that.
+
+My final parameters for steering were Kp=0.2, Kd=3.5 and Ki=0.0001. My impression was that systemic bias in the simulator (for steering purposes) is really low, since I did not observe noticeable changes in the results when setting Ki to zero.
+
+For handling the throttle I finally chose Kp=0.2, Kd=0.5 and Ki=0.0001. 
+
+It is possible to improve the driving behaviour by further tuning the parameters (either manually or optimizing with for example the Twiddle algorighm). In the future I'll try to improve my fuzzy logic approach. And even try other type of algorithms such as MPC. 
+
 ---
 
 ## Dependencies
@@ -37,62 +75,4 @@ Fellow students have put together a guide to Windows set-up for the project [her
 
 Tips for setting up your environment can be found [here](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/0949fca6-b379-42af-a919-ee50aa304e6a/lessons/f758c44c-5e40-4e01-93b5-1a82aa4e044f/concepts/23d376c7-0195-4276-bdf0-e02f1f3c665d)
 
-## Editor Settings
-
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
-
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
-
-## Code Style
-
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
-
-## Project Instructions and Rubric
-
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
-
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/e8235395-22dd-4b87-88e0-d108c5e5bbf4/concepts/6a4d8d42-6a04-4aa6-b284-1697c0fd6562)
-for instructions and the project rubric.
-
-## Hints!
-
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
-
-## Call for IDE Profiles Pull Requests
-
-Help your fellow students!
-
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
-
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
-
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
-
-## How to write a README
-A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
